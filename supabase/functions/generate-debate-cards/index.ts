@@ -28,11 +28,11 @@ serve(async (req) => {
       );
     }
 
-    const apiKey = Deno.env.get('GOOGLE_GEMINI_API_KEY');
-    if (!apiKey) {
-      console.error("GOOGLE_GEMINI_API_KEY not configured");
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) {
+      console.error("LOVABLE_API_KEY not configured");
       return new Response(
-        JSON.stringify({ error: 'API key not configured' }),
+        JSON.stringify({ error: 'AI gateway not configured' }),
         { 
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -40,84 +40,67 @@ serve(async (req) => {
       );
     }
 
-    const prompt = `Generate 3 debate cards for the topic: "${topic}". 
-    
-Each card should present a distinct argument or perspective related to this topic.
-Return ONLY a valid JSON object (no markdown code blocks, no backticks) with this exact structure:
-{
-  "cards": [
-    {
-      "tagline": "A compelling one-sentence claim or argument",
-      "evidence": "2-3 sentences of supporting evidence or explanation",
-      "citation": "A credible source or reference",
-      "link": "A relevant URL (use a realistic example if needed)"
-    }
-  ]
-}
+    const systemPrompt = `You generate exactly valid JSON. Do not include markdown, code fences, commentary, or any text outside the JSON.\nReturn an object with a 'cards' array of exactly 3 items. Each item must include: tagline (string), evidence (string, 2-3 sentences), citation (string), link (string URL).`;
 
-Make the arguments thoughtful, well-reasoned, and diverse in perspective.`;
+    const userPrompt = `Generate 3 debate cards for the topic: "${topic}". Make the arguments thoughtful, well-reasoned, and diverse in perspective.`;
 
-    console.log("Sending prompt to Gemini API...");
-    const geminiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{ text: prompt }]
-          }]
-        })
+    console.log("Calling Lovable AI gateway (non-streaming)...");
+    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+      }),
+    });
+
+    if (!aiResp.ok) {
+      const errText = await aiResp.text();
+      console.error("AI gateway error:", aiResp.status, errText);
+      if (aiResp.status === 429) {
+        return new Response(JSON.stringify({ error: "Rate limits exceeded, please try again later." }), {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
       }
-    );
-
-    if (!geminiResponse.ok) {
-      const errorText = await geminiResponse.text();
-      console.error("Gemini API error:", errorText);
-      throw new Error("Failed to generate content from Gemini API");
+      if (aiResp.status === 402) {
+        return new Response(JSON.stringify({ error: "Payment required, please add funds to your Lovable AI workspace." }), {
+          status: 402,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      throw new Error("AI gateway request failed");
     }
 
-    const geminiData = await geminiResponse.json();
-    const text = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
-    
-    if (!text) {
-      console.error("Invalid Gemini API response structure");
-      throw new Error("Invalid response from Gemini API");
+    const data = await aiResp.json();
+    let text = data?.choices?.[0]?.message?.content;
+    if (typeof text !== 'string' || !text.trim()) {
+      console.error("Invalid AI response structure", data);
+      throw new Error("Invalid AI response");
     }
-    
-    console.log("Received response from Gemini API");
 
-    // Clean the response - remove markdown code blocks if present
-    let cleanedText = text.trim();
-    if (cleanedText.startsWith('```json')) {
-      cleanedText = cleanedText.replace(/^```json\n/, '').replace(/\n```$/, '');
-    } else if (cleanedText.startsWith('```')) {
-      cleanedText = cleanedText.replace(/^```\n/, '').replace(/\n```$/, '');
-    }
+    text = text.trim();
+    if (text.startsWith('```json')) text = text.replace(/^```json\n/, '').replace(/\n```$/, '');
+    if (text.startsWith('```')) text = text.replace(/^```\n/, '').replace(/\n```$/, '');
 
     console.log("Parsing JSON response...");
-    const parsedData = JSON.parse(cleanedText);
+    const parsed = JSON.parse(text);
 
-    if (!parsedData.cards || !Array.isArray(parsedData.cards) || parsedData.cards.length === 0) {
-      console.error("Invalid response structure from Gemini");
-      return new Response(
-        JSON.stringify({ error: 'Invalid response from AI' }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
+    if (!parsed.cards || !Array.isArray(parsed.cards) || parsed.cards.length !== 3) {
+      console.error("AI did not return 3 cards as required", parsed);
+      throw new Error("AI returned unexpected structure");
     }
 
-    console.log("Successfully generated", parsedData.cards.length, "debate cards");
+    console.log("Successfully generated", parsed.cards.length, "debate cards");
     return new Response(
-      JSON.stringify(parsedData),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
+      JSON.stringify(parsed),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
