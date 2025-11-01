@@ -113,3 +113,16 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  .debate-evidence mark {
+    background-color: #fff176;
+    padding: 0 2px;
+  }
+  .debate-evidence b {
+    font-weight: 700;
+  }
+  .debate-evidence u {
+    text-decoration: underline;
+  }
+}

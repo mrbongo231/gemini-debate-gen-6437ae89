@@ -40,22 +40,35 @@ serve(async (req) => {
       );
     }
 
-    const systemPrompt = `You are an AI debate evidence formatter that outputs verbatim Public Forum–style cards.
+    const systemPrompt = `You are formatting debate evidence for Public Forum style with visual emphasis for spoken delivery.
+
+Create a card using this exact structure:
+
+Tagline: [10-18 word argumentative claim summarizing what this evidence proves.]
+Citation: [Author or Organization], [Year or "No Date"]. "[Full article title]." *[Publication Name].* [Verified URL], accessed [MM-DD-YYYY]; [Initials].
+Evidence: "[Verbatim quote from the article (1-3 sentences). Use HTML tags:
+- <mark>phrase</mark> for the part read aloud (roughly 50-70% of main sentence)
+- <b>phrase</b> for strongest emphasis (within or outside mark)
+- <u>phrase</u> for secondary or contextual emphasis
+Ensure proper punctuation and readability.]"
 
 Required Output: JSON object with 'cards' array of exactly 3 items. Each card must include:
-- tagline: Short argumentative claim (10-18 words max summarizing what the evidence proves)
-- citation: Format as: [Author/Organization], [Year]. "[Title]." *[Publication].* [URL], accessed [MM-DD-YYYY]; [Initials].
-- evidence: Verbatim quote (1-3 sentences). Use HTML: <b>bold</b> for key phrases, <u>underline</u> for supporting phrases. Must be in quotes.
-- link: Full URL to source
+- tagline: Short argumentative claim (10-18 words max)
+- citation: Format as shown above with all fields
+- evidence: Verbatim quote with <mark>, <b>, and <u> HTML tags. Must be wrapped in quotation marks.
+- link: Full working URL to source
 
 Rules:
-- Evidence must be direct quotes with HTML formatting, not paraphrases
+- Do not paraphrase; quote directly
+- Always include quotation marks around evidence
+- Highlight (<mark>) roughly 50-70% of the main sentence that a debater would read
+- Use <b> and <u> within <mark> where appropriate for layered emphasis
+- Use HTML entities correctly
+- Evidence must be direct quotes with HTML formatting
 - Tagline should be a claim, not a fragment
-- Use realistic sources and citations
-- Keep evidence under 200 words
-- Always wrap evidence in quotation marks`;
+- Use realistic academic sources with proper citations`;
 
-    const userPrompt = `Generate 3 debate cards for the topic: "${topic}". Make arguments thoughtful, well-reasoned, and diverse. Use realistic academic sources with proper citations.`;
+    const userPrompt = `Generate 3 debate cards for the topic: "${topic}". Make arguments thoughtful, well-reasoned, and diverse. Use realistic academic sources with proper citations and working URLs.`;
 
     console.log("Calling Lovable AI gateway (non-streaming)...");
     const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
