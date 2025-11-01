@@ -1,1 +1,4 @@
 project_id = "btvkpqvfnnkxvgyklfhd"
+
+[functions.generate-debate-cards]
+verify_jwt = false
