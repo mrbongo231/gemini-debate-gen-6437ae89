@@ -47,22 +47,24 @@ Create a card using this exact structure:
 Tagline: [10-18 word argumentative claim summarizing what this evidence proves.]
 Citation: [Author or Organization], [Year or "No Date"]. "[Full article title]." *[Publication Name].* [Verified URL], accessed [MM-DD-YYYY]; [Initials].
 Evidence: "[Verbatim quote from the article (1-3 sentences). Use HTML tags:
-- <mark>phrase</mark> for the part read aloud (roughly 50-70% of main sentence)
-- <b>phrase</b> for strongest emphasis (within or outside mark)
-- <u>phrase</u> for secondary or contextual emphasis
+- <mark>phrase</mark> wraps the portion read aloud (roughly 50-70% of main sentence)
+- <b>word/phrase</b> INSIDE <mark> for strongest emphasis on key words
+- <u>phrase</u> INSIDE <mark> for secondary emphasis
+Example: "<mark>Climate change <b>accelerates extinction rates</b> by <u>disrupting ecosystems</u> and <b>reducing biodiversity</b>.</mark>"
 Ensure proper punctuation and readability.]"
 
 Required Output: JSON object with 'cards' array of exactly 3 items. Each card must include:
 - tagline: Short argumentative claim (10-18 words max)
 - citation: Format as shown above with all fields
-- evidence: Verbatim quote with <mark>, <b>, and <u> HTML tags. Must be wrapped in quotation marks.
+- evidence: Verbatim quote with <mark>, <b>, and <u> HTML tags properly nested. Must be wrapped in quotation marks.
 - link: Full working URL to source
 
 Rules:
 - Do not paraphrase; quote directly
 - Always include quotation marks around evidence
 - Highlight (<mark>) roughly 50-70% of the main sentence that a debater would read
-- Use <b> and <u> within <mark> where appropriate for layered emphasis
+- Use <b> and <u> INSIDE <mark> tags for layered emphasis - never outside
+- Bold (<b>) is for strongest emphasis, underline (<u>) for supporting emphasis
 - Use HTML entities correctly
 - Evidence must be direct quotes with HTML formatting
 - Tagline should be a claim, not a fragment
