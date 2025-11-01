@@ -40,9 +40,22 @@ serve(async (req) => {
       );
     }
 
-    const systemPrompt = `You generate exactly valid JSON. Do not include markdown, code fences, commentary, or any text outside the JSON.\nReturn an object with a 'cards' array of exactly 3 items. Each item must include: tagline (string), evidence (string, 2-3 sentences), citation (string), link (string URL).`;
+    const systemPrompt = `You are an AI debate evidence formatter that outputs verbatim Public Forum–style cards.
 
-    const userPrompt = `Generate 3 debate cards for the topic: "${topic}". Make the arguments thoughtful, well-reasoned, and diverse in perspective.`;
+Required Output: JSON object with 'cards' array of exactly 3 items. Each card must include:
+- tagline: Short argumentative claim (10-18 words max summarizing what the evidence proves)
+- citation: Format as: [Author/Organization], [Year]. "[Title]." *[Publication].* [URL], accessed [MM-DD-YYYY]; [Initials].
+- evidence: Verbatim quote (1-3 sentences). Use HTML: <b>bold</b> for key phrases, <u>underline</u> for supporting phrases. Must be in quotes.
+- link: Full URL to source
+
+Rules:
+- Evidence must be direct quotes with HTML formatting, not paraphrases
+- Tagline should be a claim, not a fragment
+- Use realistic sources and citations
+- Keep evidence under 200 words
+- Always wrap evidence in quotation marks`;
+
+    const userPrompt = `Generate 3 debate cards for the topic: "${topic}". Make arguments thoughtful, well-reasoned, and diverse. Use realistic academic sources with proper citations.`;
 
     console.log("Calling Lovable AI gateway (non-streaming)...");
     const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
