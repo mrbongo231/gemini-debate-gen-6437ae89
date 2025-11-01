@@ -57,6 +57,39 @@ serve(async (req) => {
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
+        tools: [
+          {
+            type: "function",
+            function: {
+              name: "return_debate_cards",
+              description: "Return exactly 3 debate cards with tagline, evidence, citation, and link.",
+              parameters: {
+                type: "object",
+                properties: {
+                  cards: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        tagline: { type: "string" },
+                        evidence: { type: "string" },
+                        citation: { type: "string" },
+                        link: { type: "string" }
+                      },
+                      required: ["tagline", "evidence", "citation", "link"],
+                      additionalProperties: false
+                    },
+                    minItems: 3,
+                    maxItems: 3
+                  }
+                },
+                required: ["cards"],
+                additionalProperties: false
+              }
+            }
+          }
+        ],
+        tool_choice: { type: "function", function: { name: "return_debate_cards" } },
       }),
     });
 
@@ -79,29 +112,57 @@ serve(async (req) => {
     }
 
     const data = await aiResp.json();
-    let text = data?.choices?.[0]?.message?.content;
-    if (typeof text !== 'string' || !text.trim()) {
-      console.error("Invalid AI response structure", data);
-      throw new Error("Invalid AI response");
+
+    // Prefer tool-calling output for robust JSON extraction
+    let parsed: any | undefined;
+    try {
+      const toolCalls = data?.choices?.[0]?.message?.tool_calls;
+      if (toolCalls?.length) {
+        const argsStr = toolCalls[0]?.function?.arguments;
+        parsed = JSON.parse(argsStr);
+      } else {
+        let content: string | undefined = data?.choices?.[0]?.message?.content;
+        if (typeof content === 'string') {
+          content = content.trim();
+          if (content.startsWith('```json')) content = content.replace(/^```json\n/, '').replace(/\n```$/, '');
+          if (content.startsWith('```')) content = content.replace(/^```\n/, '').replace(/\n```$/, '');
+          parsed = JSON.parse(content);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to parse AI response', e);
     }
 
-    text = text.trim();
-    if (text.startsWith('```json')) text = text.replace(/^```json\n/, '').replace(/\n```$/, '');
-    if (text.startsWith('```')) text = text.replace(/^```\n/, '').replace(/\n```$/, '');
-
-    console.log("Parsing JSON response...");
-    const parsed = JSON.parse(text);
-
-    if (!parsed.cards || !Array.isArray(parsed.cards) || parsed.cards.length !== 3) {
-      console.error("AI did not return 3 cards as required", parsed);
-      throw new Error("AI returned unexpected structure");
+    if (!parsed || !parsed.cards || !Array.isArray(parsed.cards)) {
+      console.error('Invalid AI response format', data);
+      return new Response(JSON.stringify({ error: 'Invalid AI response format' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    console.log("Successfully generated", parsed.cards.length, "debate cards");
-    return new Response(
-      JSON.stringify(parsed),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    const normalize = (c: any) => ({
+      tagline: String(c?.tagline ?? ''),
+      evidence: String(c?.evidence ?? ''),
+      citation: String(c?.citation ?? ''),
+      link: String(c?.link ?? ''),
+    });
+
+    let cards = parsed.cards.map(normalize).filter((c: any) => c.tagline || c.evidence);
+    if (cards.length > 3) cards = cards.slice(0, 3);
+
+    if (cards.length === 0) {
+      return new Response(JSON.stringify({ error: 'AI returned no cards' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    console.log('Successfully generated', cards.length, 'debate cards');
+    return new Response(JSON.stringify({ cards }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
 
   } catch (error) {
     console.error('Error in generate-debate-cards function:', error);
