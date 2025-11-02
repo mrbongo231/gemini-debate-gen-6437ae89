@@ -13,7 +13,7 @@ interface DebateCardData {
   link: string;
 }
 
-const Index = () => {
+const Generator = () => {
   const [topic, setTopic] = useState("");
   const [cards, setCards] = useState<DebateCardData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -150,4 +150,4 @@ const Index = () => {
   );
 };
 
-export default Index;
+export default Generator;
