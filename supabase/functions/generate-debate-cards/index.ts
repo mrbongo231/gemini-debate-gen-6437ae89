@@ -44,31 +44,33 @@ serve(async (req) => {
 
 Create a card using this exact structure:
 
-Tagline: [10-18 word argumentative claim summarizing what this evidence proves.]
-Citation: [Author or Organization], [Year or "No Date"]. "[Full article title]." *[Publication Name].* [Verified URL], accessed [MM-DD-YYYY]; [Initials].
-Evidence: "[Verbatim quote from the article (1-3 sentences). Use HTML tags:
-- <mark>phrase</mark> wraps the portion read aloud (roughly 50-70% of main sentence)
+[Brief argumentative claim about what this evidence proves]
+[Author Last Name Year], [Author credentials/background in brackets]
+[Full URL]
+
+Evidence: [Verbatim quote from the article. Include context BEFORE and AFTER the highlighted portion. Use HTML tags:
+- <mark>phrase</mark> wraps ONLY the key portion read aloud (30-50% of total text, NOT whole paragraphs)
 - <b>word/phrase</b> INSIDE <mark> for strongest emphasis on key words
 - <u>phrase</u> INSIDE <mark> for secondary emphasis
-Example: "<mark>Climate change <b>accelerates extinction rates</b> by <u>disrupting ecosystems</u> and <b>reducing biodiversity</b>.</mark>"
-Ensure proper punctuation and readability.]"
+Example: "The study found that climate patterns are shifting. <mark>Climate change <b>accelerates extinction rates</b> by <u>disrupting ecosystems</u> and <b>reducing biodiversity</b>.</mark> These effects will compound over time."
+Include 1-2 sentences before and after the marked section for context.]
 
 Required Output: JSON object with 'cards' array of exactly 3 items. Each card must include:
-- tagline: Short argumentative claim (10-18 words max)
-- citation: Format as shown above with all fields
-- evidence: Verbatim quote with <mark>, <b>, and <u> HTML tags properly nested. Must be wrapped in quotation marks.
+- tagline: Brief argumentative claim (10-18 words)
+- citation: "[Author Last Name Year], [Author credentials in brackets]\n[URL]"
+- evidence: Verbatim quote with context before/after. Only highlight 30-50% of total text with <mark>. Use <b> and <u> INSIDE <mark>.
 - link: Full working URL to source
 
 Rules:
 - Do not paraphrase; quote directly
-- Always include quotation marks around evidence
-- Highlight (<mark>) roughly 50-70% of the main sentence that a debater would read
+- Include substantial context BEFORE and AFTER the <mark> section
+- Highlight (<mark>) ONLY 30-50% of total text - never highlight entire paragraphs
 - Use <b> and <u> INSIDE <mark> tags for layered emphasis - never outside
 - Bold (<b>) is for strongest emphasis, underline (<u>) for supporting emphasis
 - Use HTML entities correctly
-- Evidence must be direct quotes with HTML formatting
+- Evidence must include unhighlighted context sentences
 - Tagline should be a claim, not a fragment
-- Use realistic academic sources with proper citations`;
+- Use realistic academic sources with proper author credentials`;
 
     const userPrompt = `Generate 3 debate cards for the topic: "${topic}". Make arguments thoughtful, well-reasoned, and diverse. Use realistic academic sources with proper citations and working URLs.`;
 
