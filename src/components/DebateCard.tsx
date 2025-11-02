@@ -17,8 +17,33 @@ export const DebateCard = ({ tagline, evidence, citation, link, index }: DebateC
   const { toast } = useToast();
 
   const copyCard = async () => {
-    const htmlContent = `<strong>Tagline:</strong> ${tagline}<br><strong>Citation:</strong> ${citation}<br><strong>Evidence:</strong> ${evidence}`;
-    const plainText = `Tagline: ${tagline}\nCitation: ${citation}\nEvidence: ${evidence.replace(/<[^>]*>/g, '')}`;
+    // Convert <mark> to inline-styled <span> so Google Docs preserves highlighting
+    const toDocsHtml = (html: string) =>
+      html
+        .replace(/<mark>/g, '<span style="background-color:#fff176; padding:0 2px;">')
+        .replace(/<\/mark>/g, '</span>');
+
+    const stripTags = (html: string) => html.replace(/<[^>]*>/g, '');
+    const escapeHtml = (text: string) =>
+      text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+
+    const evidenceHtml = toDocsHtml(evidence);
+
+    // Assemble preferred copy order (no labels): Tagline, Citation, URL, then Evidence
+    const htmlContent = `
+      <div>
+        <div>${escapeHtml(tagline)}</div>
+        <div>${escapeHtml(citation)}</div>
+        <div><a href="${link}" target="_blank" rel="noopener noreferrer">${link}</a></div>
+        <div style="margin-top:8px;" class="debate-evidence">${evidenceHtml}</div>
+      </div>`;
+
+    const plainText = `${tagline}\n${citation}\n${link}\n\n${stripTags(evidence)}`;
 
     try {
       await navigator.clipboard.write([
@@ -30,7 +55,7 @@ export const DebateCard = ({ tagline, evidence, citation, link, index }: DebateC
       setCopied(true);
       toast({
         title: "Card copied!",
-        description: "HTML formatting preserved for pasting into Word/Google Docs",
+        description: "Optimized for Google Docs: highlighting, bold, and underline preserved.",
       });
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
@@ -38,7 +63,7 @@ export const DebateCard = ({ tagline, evidence, citation, link, index }: DebateC
       await navigator.clipboard.writeText(plainText);
       toast({
         title: "Card copied (plain text)",
-        description: "HTML formatting not supported by your browser",
+        description: "Your browser blocked rich HTML copy.",
       });
     }
   };
