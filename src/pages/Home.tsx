@@ -2,13 +2,16 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Sparkles, FileText, Copy, Zap } from "lucide-react";
+import { Navbar } from "@/components/Navbar";
 
 const Home = () => {
   return (
     <div className="min-h-screen bg-background">
+      <Navbar />
       {/* Hero Section */}
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,hsl(var(--primary)/.08),transparent_50%),radial-gradient(circle_at_70%_60%,hsl(var(--accent)/.06),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,hsl(var(--primary)/.15),transparent_50%),radial-gradient(circle_at_70%_60%,hsl(var(--accent)/.12),transparent_50%),radial-gradient(circle_at_50%_50%,hsl(var(--secondary)/.08),transparent_70%)]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background" />
         
         <div className="container relative mx-auto px-4 py-24 md:py-32">
           <div className="mx-auto max-w-4xl text-center space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
@@ -32,7 +35,7 @@ const Home = () => {
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
               <Link to="/generator">
-                <Button size="lg" className="h-14 px-8 text-lg font-semibold shadow-lg hover:shadow-xl transition-all">
+                <Button size="lg" className="rainbow-hover h-14 px-8 text-lg font-semibold shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 bg-gradient-to-r from-primary via-accent to-secondary">
                   Start Generating
                   <Sparkles className="ml-2 h-5 w-5" />
                 </Button>
@@ -43,9 +46,10 @@ const Home = () => {
       </section>
 
       {/* Features Section */}
-      <section className="py-24 bg-gradient-to-b from-background to-muted/20">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16 space-y-4">
+      <section className="py-24 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-background via-muted/10 to-background" />
+        <div className="container relative mx-auto px-4">
+          <div className="text-center mb-16 space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <h2 className="text-3xl md:text-4xl font-bold">
               Everything you need for competitive debate
             </h2>
@@ -55,7 +59,7 @@ const Home = () => {
           </div>
 
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            <Card className="border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-lg group">
+            <Card className="border-2 hover:border-primary/50 transition-all duration-500 hover:shadow-xl hover:-translate-y-2 group animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
               <CardContent className="pt-8 space-y-4">
                 <div className="h-14 w-14 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
                   <Sparkles className="h-7 w-7 text-primary" />
@@ -68,7 +72,7 @@ const Home = () => {
               </CardContent>
             </Card>
 
-            <Card className="border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-lg group">
+            <Card className="border-2 hover:border-accent/50 transition-all duration-500 hover:shadow-xl hover:-translate-y-2 group animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
               <CardContent className="pt-8 space-y-4">
                 <div className="h-14 w-14 rounded-xl bg-accent/10 flex items-center justify-center group-hover:bg-accent/20 transition-colors">
                   <FileText className="h-7 w-7 text-accent" />
@@ -81,7 +85,7 @@ const Home = () => {
               </CardContent>
             </Card>
 
-            <Card className="border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-lg group">
+            <Card className="border-2 hover:border-secondary/50 transition-all duration-500 hover:shadow-xl hover:-translate-y-2 group animate-in fade-in slide-in-from-bottom-8 duration-700 delay-300">
               <CardContent className="pt-8 space-y-4">
                 <div className="h-14 w-14 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
                   <Copy className="h-7 w-7 text-primary" />

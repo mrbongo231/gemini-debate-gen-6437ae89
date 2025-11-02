@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { DebateCard } from "@/components/DebateCard";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { useToast } from "@/hooks/use-toast";
+import { Navbar } from "@/components/Navbar";
 import { MessageSquare } from "lucide-react";
 
 interface DebateCardData {
@@ -76,6 +77,7 @@ const Generator = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Navbar />
       <div className="container mx-auto px-4 py-12 max-w-6xl">
         {/* Header */}
         <div className="text-center mb-12 space-y-4 animate-in fade-in slide-in-from-top-4">
