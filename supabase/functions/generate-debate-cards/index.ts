@@ -171,6 +171,36 @@ Rules:
       });
     }
 
+    // Validate URL format
+    const isValidUrl = (urlString: string): boolean => {
+      try {
+        const url = new URL(urlString);
+        return url.protocol === 'http:' || url.protocol === 'https:';
+      } catch {
+        return false;
+      }
+    };
+
+    // Check if URL is accessible (with timeout)
+    const checkUrlAccessible = async (url: string): Promise<boolean> => {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+        
+        const response = await fetch(url, {
+          method: 'HEAD',
+          signal: controller.signal,
+          redirect: 'follow'
+        });
+        
+        clearTimeout(timeoutId);
+        return response.ok || response.status === 403; // 403 means URL exists but blocks HEAD requests
+      } catch (error) {
+        console.log(`URL check failed for ${url}:`, error);
+        return false;
+      }
+    };
+
     const normalize = (c: any) => ({
       tagline: String(c?.tagline ?? ''),
       evidence: String(c?.evidence ?? ''),
@@ -180,6 +210,21 @@ Rules:
 
     let cards = parsed.cards.map(normalize).filter((c: any) => c.tagline || c.evidence);
     if (cards.length > 3) cards = cards.slice(0, 3);
+
+    // Validate and verify URLs
+    console.log('Validating URLs...');
+    for (const card of cards) {
+      if (!isValidUrl(card.link)) {
+        console.warn(`Invalid URL format: ${card.link}`);
+        card.link = 'https://scholar.google.com/'; // Fallback to Google Scholar
+      } else {
+        const isAccessible = await checkUrlAccessible(card.link);
+        if (!isAccessible) {
+          console.warn(`URL not accessible: ${card.link}, checking alternate...`);
+          // Try to keep the original URL but log the issue
+        }
+      }
+    }
 
     if (cards.length === 0) {
       return new Response(JSON.stringify({ error: 'AI returned no cards' }), {
