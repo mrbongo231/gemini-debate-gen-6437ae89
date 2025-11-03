@@ -17,13 +17,17 @@ export const DebateCard = ({ tagline, evidence, citation, link, index }: DebateC
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
 
-  // Normalize evidence: remove bold outside highlights and underline+bold highlighted spans only
+  // Normalize evidence: ensure underline within marks, never bold outside marks
   const normalizeEvidenceHtml = (html: string) => {
-    const withoutStrong = html.replace(/<\/?strong>/g, "");
-    return withoutStrong.replace(/<mark>(.*?)<\/mark>/gs, "<u><strong>$1</strong></u>");
+    const noStrong = html.replace(/<\/?strong>/g, "");
+    return noStrong.replace(/<mark>([\s\S]*?)<\/mark>/g, (_m, inner) => {
+      const cleaned = String(inner).replace(/<\/?u>/g, "");
+      return `<mark><u>${cleaned}</u></mark>`; // preserves any existing <b> inside
+    });
   };
 
   const [linkStatus, setLinkStatus] = useState<"checking" | "ok" | "bad">("checking");
+  const [resolvedLink, setResolvedLink] = useState(link);
 
   useEffect(() => {
     let active = true;
@@ -31,13 +35,18 @@ export const DebateCard = ({ tagline, evidence, citation, link, index }: DebateC
       try {
         const { data, error } = await supabase.functions.invoke("check-url", { body: { url: link } });
         if (!active) return;
-        if (error) {
+        if (error || !data) {
           setLinkStatus("bad");
+          setResolvedLink(link);
         } else {
-          setLinkStatus(data?.ok ? "ok" : "bad");
+          setLinkStatus(data.ok ? "ok" : "bad");
+          setResolvedLink(data.finalUrl ?? link);
         }
       } catch {
-        if (active) setLinkStatus("bad");
+        if (active) {
+          setLinkStatus("bad");
+          setResolvedLink(link);
+        }
       }
     };
     run();
@@ -51,7 +60,10 @@ export const DebateCard = ({ tagline, evidence, citation, link, index }: DebateC
     const toDocsHtml = (html: string) =>
       html
         .replace(/<\/?strong>/g, "")
-        .replace(/<mark>(.*?)<\/mark>/gs, '<span style="background-color:#fff176; padding:0 2px; text-decoration: underline;"><b>$1</b></span>');
+        .replace(/<mark>([\s\S]*?)<\/mark>/g, (_m, inner) => {
+          const cleaned = String(inner).replace(/<\/?u>/g, "");
+          return '<span style="background-color:#fff176; padding:0 2px; text-decoration: underline;">' + cleaned + '</span>';
+        });
 
     const stripTags = (html: string) => html.replace(/<[^>]*>/g, '');
     const escapeHtml = (text: string) =>
@@ -69,11 +81,11 @@ export const DebateCard = ({ tagline, evidence, citation, link, index }: DebateC
       <div>
         <div>${escapeHtml(tagline)}</div>
         <div>${escapeHtml(citation)}</div>
-        <div><a href="${link}" target="_blank" rel="noopener noreferrer">${link}</a></div>
+        <div><a href="${resolvedLink}" target="_blank" rel="noopener noreferrer">${resolvedLink}</a></div>
         <div style="margin-top:8px;" class="debate-evidence">${evidenceHtml}</div>
       </div>`;
 
-    const plainText = `${tagline}\n${citation}\n${link}\n\n${stripTags(evidence)}`;
+    const plainText = `${tagline}\n${citation}\n${resolvedLink}\n\n${stripTags(evidence)}`;
 
     try {
       await navigator.clipboard.write([
@@ -113,7 +125,7 @@ export const DebateCard = ({ tagline, evidence, citation, link, index }: DebateC
             {citation}
           </CardDescription>
           <a
-            href={link}
+            href={resolvedLink}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 text-xs text-accent hover:text-primary transition-colors group"

@@ -36,11 +36,11 @@ serve(async (req) => {
       });
     }
 
-    const withTimeout = async (fn: () => Promise<Response>, ms = 8000) => {
+    const withTimeout = async (fn: (signal: AbortSignal) => Promise<Response>, ms = 8000) => {
       const controller = new AbortController();
       const t = setTimeout(() => controller.abort(), ms);
       try {
-        const res = await fn();
+        const res = await fn(controller.signal);
         clearTimeout(t);
         return res;
       } catch (e) {
@@ -54,31 +54,57 @@ serve(async (req) => {
       return (status >= 200 && status < 400) || status === 401 || status === 403 || status === 405;
     };
 
-    let headStatus = 0;
+    const extractDoi = (input: string): string | null => {
+      const m = input.match(/10\.\d{4,9}\/[\w.;()/:<>#\-_%+~]+/i);
+      return m ? m[0] : null;
+    };
+
+    const doi = extractDoi(url);
+    const doiUrl = doi ? `https://doi.org/${doi}` : null;
+
+    // 1) Try HEAD (follow redirects)
     try {
-      const headResp = await withTimeout(() => fetch(url, { method: "HEAD", redirect: "follow" }));
-      headStatus = headResp.status;
-      if (acceptable(headStatus)) {
-        return new Response(JSON.stringify({ ok: true, status: headStatus }), {
+      const headResp = await withTimeout((signal) => fetch(url, { method: "HEAD", redirect: "follow", signal }));
+      const headOk = acceptable(headResp.status);
+      if (headOk) {
+        return new Response(JSON.stringify({ ok: true, status: headResp.status, finalUrl: doiUrl ?? headResp.url }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-    } catch (_) {
-      // ignore and try GET
-    }
+    } catch (_) { /* fall through */ }
 
+    // 2) Try GET (follow redirects)
     try {
-      const getResp = await withTimeout(() => fetch(url, { method: "GET", redirect: "follow" }));
+      const getResp = await withTimeout((signal) => fetch(url, { method: "GET", redirect: "follow", signal }));
       const status = getResp.status;
-      return new Response(JSON.stringify({ ok: acceptable(status), status }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    } catch (e) {
-      return new Response(JSON.stringify({ ok: false, error: e instanceof Error ? e.message : "fetch failed" }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+      if (acceptable(status)) {
+        return new Response(JSON.stringify({ ok: true, status, finalUrl: doiUrl ?? getResp.url }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    } catch (_) { /* fall through */ }
+
+    // 3) DOI fallback: convert any detected DOI to doi.org
+    try {
+      if (doiUrl) {
+        const doiHead = await withTimeout((signal) => fetch(doiUrl, { method: "HEAD", redirect: "follow", signal }));
+        if (acceptable(doiHead.status)) {
+          return new Response(JSON.stringify({ ok: true, status: doiHead.status, finalUrl: doiHead.url || doiUrl }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        const doiGet = await withTimeout((signal) => fetch(doiUrl, { method: "GET", redirect: "follow", signal }));
+        if (acceptable(doiGet.status)) {
+          return new Response(JSON.stringify({ ok: true, status: doiGet.status, finalUrl: doiGet.url || doiUrl }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
+    } catch (_) { /* ignore */ }
+
+    return new Response(JSON.stringify({ ok: false, status: 0 }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (error) {
     console.error("check-url error", error);
     return new Response(JSON.stringify({ ok: false, error: "Bad request" }), {

@@ -48,12 +48,12 @@ Output exactly this structure:
 [Author Last Name Year], [Author credentials in brackets]
 [Full URL]
 
-Evidence: [Verbatim quote with 1–2 sentences before and after the highlighted part. Formatting rules:
-- Use <mark> only for a single 3–6 word phrase (never a whole sentence or paragraph).
-- If you use bold, it must be inside the <mark> and only for 1–3 words that matter most.
-- Always include underline for any highlighted words (use <u> inside the same <mark>).
+Evidence: [Verbatim quote with 1–2 sentences before and after the highlighted parts. Formatting rules:
+- Use <mark> for 2–4 short phrases (3–8 words each), not entire sentences or paragraphs.
+- Every <mark> must at least be underlined using <u> (inside the mark).
+- Bold (<b>) may be used for 1–3 keywords inside a <mark>, never outside.
 - Never use <b> or <u> outside of <mark>.
-Example: "The study found multiple effects. <mark><u>Climate change</u> <b>accelerates extinction</b> rates</mark> by disrupting ecosystems." ]
+Example: "The study found multiple effects. <mark><u>Climate change</u> <b>accelerates extinction</b> rates</mark> by disrupting ecosystems; <mark><u>habitat loss</u> <b>magnifies risk</b></mark> in hotspots." ]
 
 Required Output (tool): JSON object with a 'cards' array of exactly 3 items. Each card must include:
 - tagline: concise claim (10–16 words)
@@ -63,8 +63,8 @@ Required Output (tool): JSON object with a 'cards' array of exactly 3 items. Eac
 
 Rules:
 - Do not paraphrase; quote directly from the article
-- Never highlight more than ~8 words at once and never an entire sentence
-- Provide context sentences BEFORE and AFTER the highlighted phrase
+- Never highlight an entire sentence; prefer multiple short <mark> segments
+- Provide context sentences BEFORE and AFTER the highlighted phrases
 - Use realistic academic/news sources with author names and working URLs`;
 
     const userPrompt = `Generate 3 debate cards for the topic: "${topic}". Make arguments thoughtful, well-reasoned, and diverse. Use realistic academic sources with proper citations and working URLs.`;
