@@ -17,15 +17,15 @@ export const DebateCard = ({ tagline, evidence, citation, link, index }: DebateC
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
 
-  // Normalize evidence: ensure underline within marks, never bold outside marks
+  // Normalize evidence: ensure marks contain underline; preserve existing <u> outside marks and <b> inside marks
   const normalizeEvidenceHtml = (html: string) => {
     const noStrong = html.replace(/<\/?strong>/g, "");
     return noStrong.replace(/<mark>([\s\S]*?)<\/mark>/g, (_m, inner) => {
-      const cleaned = String(inner).replace(/<\/?u>/g, "");
-      return `<mark><u>${cleaned}</u></mark>`; // preserves any existing <b> inside
+      const hasUnderline = /<\/?u>/.test(inner);
+      if (hasUnderline) return `<mark>${inner}</mark>`;
+      return `<mark><u>${inner}</u></mark>`;
     });
   };
-
   const [linkStatus, setLinkStatus] = useState<"checking" | "ok" | "bad">("checking");
   const [resolvedLink, setResolvedLink] = useState(link);
 

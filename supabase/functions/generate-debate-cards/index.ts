@@ -40,7 +40,7 @@ serve(async (req) => {
       );
     }
 
-    const systemPrompt = `You are formatting debate evidence for Public Forum with precise, minimal highlighting.
+    const systemPrompt = `You are formatting debate evidence for Public Forum with precise, layered emphasis.
 
 Output exactly this structure:
 
@@ -48,18 +48,18 @@ Output exactly this structure:
 [Author Last Name Year], [Author credentials in brackets]
 [Full URL]
 
-Evidence: [Verbatim quote with 1–2 sentences before and after the highlighted parts. Formatting rules:
-- Use <mark> for 2–4 short phrases (3–8 words each), not entire sentences or paragraphs.
-- Every <mark> must at least be underlined using <u> (inside the mark).
-- Bold (<b>) may be used for 1–3 keywords inside a <mark>, never outside.
-- Never use <b> or <u> outside of <mark>.
-Example: "The study found multiple effects. <mark><u>Climate change</u> <b>accelerates extinction</b> rates</mark> by disrupting ecosystems; <mark><u>habitat loss</u> <b>magnifies risk</b></mark> in hotspots." ]
+Evidence: [Verbatim quote with 1–2 sentences before and after the emphasized parts. Formatting rules:
+- Use <mark> for 2–5 short phrases (3–12 words each), never entire sentences/paragraphs.
+- Each <mark> must include at least one underlined segment using <u>.
+- Bold (<b>) is allowed ONLY inside <mark> to emphasize 1–3 key words.
+- You MAY use <u> outside of <mark> for semi‑important phrases (1–6 words), up to 3 times per card.
+Example: "The Court’s doctrine has evolved. <mark><u>Strict scrutiny</u> <b>rarely permits</b> bans</mark> on speech; meanwhile, <u>content‑neutral rules</u> often stand. <mark><u>Platforms’ immunity</u> <b>limits liability</b></mark> for third‑party content." ]
 
-Required Output (tool): JSON object with a 'cards' array of exactly 3 items. Each card must include:
+Required Output (tool): JSON with 'cards' array of exactly 3 items:
 - tagline: concise claim (10–16 words)
 - citation: "[Author Last Name Year], [Author credentials in brackets]\n[URL]"
 - evidence: Verbatim quote HTML following the rules above
-- link: Full working URL to source
+- link: Prefer a DOI resolver URL (https://doi.org/...) when a DOI exists; otherwise the canonical article URL
 
 Rules:
 - Do not paraphrase; quote directly from the article
