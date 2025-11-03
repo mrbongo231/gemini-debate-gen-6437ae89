@@ -2,3 +2,6 @@ project_id = "btvkpqvfnnkxvgyklfhd"
 
 [functions.generate-debate-cards]
 verify_jwt = false
+
+[functions.check-url]
+verify_jwt = false

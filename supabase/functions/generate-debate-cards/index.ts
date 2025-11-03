@@ -40,37 +40,32 @@ serve(async (req) => {
       );
     }
 
-    const systemPrompt = `You are formatting debate evidence for Public Forum style with visual emphasis for spoken delivery.
+    const systemPrompt = `You are formatting debate evidence for Public Forum with precise, minimal highlighting.
 
-Create a card using this exact structure:
+Output exactly this structure:
 
 [Brief argumentative claim about what this evidence proves]
-[Author Last Name Year], [Author credentials/background in brackets]
+[Author Last Name Year], [Author credentials in brackets]
 [Full URL]
 
-Evidence: [Verbatim quote from the article. Include context BEFORE and AFTER the highlighted portion. Use HTML tags:
-- <mark>phrase</mark> wraps ONLY the key portion read aloud (30-50% of total text, NOT whole paragraphs)
-- <b>word/phrase</b> INSIDE <mark> for strongest emphasis on key words
-- <u>phrase</u> INSIDE <mark> for secondary emphasis
-Example: "The study found that climate patterns are shifting. <mark>Climate change <b>accelerates extinction rates</b> by <u>disrupting ecosystems</u> and <b>reducing biodiversity</b>.</mark> These effects will compound over time."
-Include 1-2 sentences before and after the marked section for context.]
+Evidence: [Verbatim quote with 1–2 sentences before and after the highlighted part. Formatting rules:
+- Use <mark> only for a single 3–6 word phrase (never a whole sentence or paragraph).
+- If you use bold, it must be inside the <mark> and only for 1–3 words that matter most.
+- Always include underline for any highlighted words (use <u> inside the same <mark>).
+- Never use <b> or <u> outside of <mark>.
+Example: "The study found multiple effects. <mark><u>Climate change</u> <b>accelerates extinction</b> rates</mark> by disrupting ecosystems." ]
 
-Required Output: JSON object with 'cards' array of exactly 3 items. Each card must include:
-- tagline: Brief argumentative claim (10-18 words)
+Required Output (tool): JSON object with a 'cards' array of exactly 3 items. Each card must include:
+- tagline: concise claim (10–16 words)
 - citation: "[Author Last Name Year], [Author credentials in brackets]\n[URL]"
-- evidence: Verbatim quote with context before/after. Only highlight 30-50% of total text with <mark>. Use <b> and <u> INSIDE <mark>.
+- evidence: Verbatim quote HTML following the rules above
 - link: Full working URL to source
 
 Rules:
-- Do not paraphrase; quote directly
-- Include substantial context BEFORE and AFTER the <mark> section
-- Highlight (<mark>) ONLY 30-50% of total text - never highlight entire paragraphs
-- Use <b> and <u> INSIDE <mark> tags for layered emphasis - never outside
-- Bold (<b>) is for strongest emphasis, underline (<u>) for supporting emphasis
-- Use HTML entities correctly
-- Evidence must include unhighlighted context sentences
-- Tagline should be a claim, not a fragment
-- Use realistic academic sources with proper author credentials`;
+- Do not paraphrase; quote directly from the article
+- Never highlight more than ~8 words at once and never an entire sentence
+- Provide context sentences BEFORE and AFTER the highlighted phrase
+- Use realistic academic/news sources with author names and working URLs`;
 
     const userPrompt = `Generate 3 debate cards for the topic: "${topic}". Make arguments thoughtful, well-reasoned, and diverse. Use realistic academic sources with proper citations and working URLs.`;
 

@@ -1,8 +1,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ExternalLink, Copy, Check } from "lucide-react";
+import { ExternalLink, Copy, Check, CheckCircle, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface DebateCardProps {
   tagline: string;
@@ -16,12 +17,41 @@ export const DebateCard = ({ tagline, evidence, citation, link, index }: DebateC
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
 
+  // Normalize evidence: remove bold outside highlights and underline+bold highlighted spans only
+  const normalizeEvidenceHtml = (html: string) => {
+    const withoutStrong = html.replace(/<\/?strong>/g, "");
+    return withoutStrong.replace(/<mark>(.*?)<\/mark>/gs, "<u><strong>$1</strong></u>");
+  };
+
+  const [linkStatus, setLinkStatus] = useState<"checking" | "ok" | "bad">("checking");
+
+  useEffect(() => {
+    let active = true;
+    const run = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke("check-url", { body: { url: link } });
+        if (!active) return;
+        if (error) {
+          setLinkStatus("bad");
+        } else {
+          setLinkStatus(data?.ok ? "ok" : "bad");
+        }
+      } catch {
+        if (active) setLinkStatus("bad");
+      }
+    };
+    run();
+    return () => {
+      active = false;
+    };
+  }, [link]);
+
   const copyCard = async () => {
     // Convert <mark> to inline-styled <span> so Google Docs preserves highlighting
     const toDocsHtml = (html: string) =>
       html
-        .replace(/<mark>/g, '<span style="background-color:#fff176; padding:0 2px;">')
-        .replace(/<\/mark>/g, '</span>');
+        .replace(/<\/?strong>/g, "")
+        .replace(/<mark>(.*?)<\/mark>/gs, '<span style="background-color:#fff176; padding:0 2px; text-decoration: underline;"><b>$1</b></span>');
 
     const stripTags = (html: string) => html.replace(/<[^>]*>/g, '');
     const escapeHtml = (text: string) =>
@@ -78,6 +108,25 @@ export const DebateCard = ({ tagline, evidence, citation, link, index }: DebateC
       }}
     >
       <CardHeader>
+        <div className="flex items-start justify-between gap-2">
+          <CardDescription className="text-xs font-medium text-foreground">
+            {citation}
+          </CardDescription>
+          <a
+            href={link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-xs text-accent hover:text-primary transition-colors group"
+          >
+            {linkStatus === "ok" ? (
+              <CheckCircle className="w-3 h-3 text-primary" />
+            ) : linkStatus === "bad" ? (
+              <XCircle className="w-3 h-3 text-destructive" />
+            ) : null}
+            <span>Source</span>
+            <ExternalLink className="w-3 h-3 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+          </a>
+        </div>
         <CardTitle className="text-xl font-semibold text-primary leading-tight">
           {tagline}
         </CardTitle>
@@ -86,42 +135,28 @@ export const DebateCard = ({ tagline, evidence, citation, link, index }: DebateC
         <div>
           <p 
             className="text-sm text-muted-foreground leading-relaxed debate-evidence"
-            dangerouslySetInnerHTML={{ __html: evidence }}
+            dangerouslySetInnerHTML={{ __html: normalizeEvidenceHtml(evidence) }}
           />
         </div>
-        <div className="pt-4 border-t border-border space-y-3">
-          <p className="text-xs font-medium text-foreground">
-            {citation}
-          </p>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={copyCard}
-              className="text-xs"
-            >
-              {copied ? (
-                <>
-                  <Check className="w-3 h-3 mr-1" />
-                  Copied
-                </>
-              ) : (
-                <>
-                  <Copy className="w-3 h-3 mr-1" />
-                  Copy Card
-                </>
-              )}
-            </Button>
-            <a
-              href={link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-xs text-accent hover:text-primary transition-colors group"
-            >
-              <span>View source</span>
-              <ExternalLink className="w-3 h-3 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-            </a>
-          </div>
+        <div className="pt-4 border-t border-border">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={copyCard}
+            className="text-xs"
+          >
+            {copied ? (
+              <>
+                <Check className="w-3 h-3 mr-1" />
+                Copied
+              </>
+            ) : (
+              <>
+                <Copy className="w-3 h-3 mr-1" />
+                Copy Card
+              </>
+            )}
+          </Button>
         </div>
       </CardContent>
     </Card>
